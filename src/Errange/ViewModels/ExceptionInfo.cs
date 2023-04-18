@@ -1,6 +1,6 @@
 ﻿namespace Errange.ViewModels;
 
-public class ExceptionInfoVM
+public class ExceptionInfo
 {
     public string Message { get; init; } = null!;
 

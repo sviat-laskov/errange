@@ -2,21 +2,30 @@ using System.Net;
 using System.Text.Json.Serialization;
 using Errange.Extensions;
 using ExampleApi.Exceptions;
+using ExampleApi.Services;
+using ExampleApi.Services.Interfaces;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services
+    .AddScoped<ICustomService, CustomService>()
     .AddEndpointsApiExplorer()
     .AddSwaggerGen()
     .AddRouting(options => options.LowercaseUrls = true)
     .AddErrange(options => options
-        .AddPolicy<CustomException>(policy => policy
+        .WithPolicy<CustomException>(policy => policy
             .WithHttpStatusCode(HttpStatusCode.BadRequest)
-            .WithCode("CUS001")
+            .WithCustomProblemCode("CUS001")
             .WithDetail("Happens when you want this.")
-            .WithDataItem((_, _, _) => "fromException", (exception, _, _) => exception.Message)
-            .WithDataItem((_, _, _) => "fromRequest", (_, context, _) => context.Request.Query["parameter"].SingleOrDefault()).When((value, _, _, _) => value == "defaultParameterValue")
-            .WithDataItem((_, _, _) => "constant", (_, _, _) => "Constant", "This message happened, cause you configured it.")))
+            .WithDataItem("fromException").WithValue(exception => new
+            {
+                exception.Message,
+                Parameter = exception.Data["parameter"]
+            }).WithMessages("This is item from exception.")
+            .ProblemPolicy.WithDataItem("fromRequest").WithValue(context => context.Request.Query["parameter"].SingleOrDefault()).WithMessages("This is item from http context request.")
+            .ProblemPolicy.WithDataItem("fromServices").WithValue<ICustomService, string>(customService => customService.Data).WithMessages("This is item from service.")
+            .ProblemPolicy.WithDataItem("constant").WithValue("Constant").WithMessages("This is constant value.")
+        ))
     .AddControllers()
     .AddJsonOptions(options => options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault);
 

@@ -4,84 +4,60 @@ using Microsoft.Extensions.Hosting;
 
 namespace Errange;
 
-//todo lock when all is configured
 public class ErrangeOptions
 {
-    private static readonly ErrorPolicy<Exception> BaseExceptionErrorPolicy = new ErrorPolicy<Exception>()
+    private static readonly ProblemPolicy<Exception> BaseExceptionProblemPolicy = new ProblemPolicy<Exception>()
         .WithHttpStatusCode(HttpStatusCode.InternalServerError)
         .WithDetail("Internal server error.");
-    private static readonly ErrorPolicy<InvalidModelStateException> InvalidModelStateExceptionErrorPolicy = new ErrorPolicy<InvalidModelStateException>()
+    private static readonly ProblemPolicy<InvalidModelStateException> InvalidModelStateExceptionProblemPolicy = new ProblemPolicy<InvalidModelStateException>()
         .WithHttpStatusCode(HttpStatusCode.BadRequest)
         .WithTitle("One or more validation errors occurred.")
-        .WithDataItemForEach(exception => exception.ModelState,
+        .WithDataItems((exception, _, _) => exception.ModelState,
             (keyToModelStateEntry, _, _, _) => keyToModelStateEntry.Key,
             (keyToModelStateEntry, _, _, _) => keyToModelStateEntry.Value.RawValue,
             (keyToModelStateEntry, _, _, _) => keyToModelStateEntry.Value.Errors.Select(error => error.ErrorMessage));
 
-    private readonly IDictionary<Type, ErrorPolicy> _exceptionTypeToErrorFactories = new Dictionary<Type, ErrorPolicy>();
+    internal static Func<IHostEnvironment, bool> DefaultExceptionDetailsAdditionPredicate = env => env.IsDevelopment();
 
-    public Func<IHostEnvironment, bool> ExceptionDetailsAdditionPredicate = env => env.IsDevelopment();
+    private readonly IDictionary<Type, ProblemPolicy> _exceptionTypeToErrorFactories = new Dictionary<Type, ProblemPolicy>();
 
-    public static ErrangeOptions Instance => new();
+    internal Func<IHostEnvironment, bool> ExceptionInfoInclusionPredicate = DefaultExceptionDetailsAdditionPredicate;
 
-    public ErrangeOptions()
+    internal ErrangeOptions()
     {
-        _exceptionTypeToErrorFactories.Add(BaseExceptionErrorPolicy.ExceptionType, BaseExceptionErrorPolicy);
-        _exceptionTypeToErrorFactories.Add(InvalidModelStateExceptionErrorPolicy.ExceptionType, InvalidModelStateExceptionErrorPolicy);
+        _exceptionTypeToErrorFactories.Add(BaseExceptionProblemPolicy.ExceptionType, BaseExceptionProblemPolicy);
+        _exceptionTypeToErrorFactories.Add(InvalidModelStateExceptionProblemPolicy.ExceptionType, InvalidModelStateExceptionProblemPolicy);
     }
 
-    public ErrangeOptions AddPolicy<TException>(Action<ErrorPolicy<TException>> errorPolicyConfigure) where TException : Exception
+    /// <summary>
+    ///     Adds policy to map exception to error.
+    /// </summary>
+    /// <typeparam name="TException">
+    ///     Exception, that should be mapped. If it's child is thrown, but policy for it is not
+    ///     present - policy for this exception is used.
+    /// </typeparam>
+    /// <returns></returns>
+    public ErrangeOptions WithPolicy<TException>(Action<ProblemPolicy<TException>> errorPolicyConfigure) where TException : Exception
     {
-        var errorPolicy = new ErrorPolicy<TException>();
+        var errorPolicy = new ProblemPolicy<TException>();
         errorPolicyConfigure(errorPolicy);
-        return _exceptionTypeToErrorFactories.TryAdd(errorPolicy.ExceptionType, errorPolicy)
-            ? this
-            : throw new ArgumentException("Policy for this exception was already configured.", nameof(TException));
+        _exceptionTypeToErrorFactories[errorPolicy.ExceptionType] = errorPolicy;
+
+        return this;
     }
 
-    //public ErrangeOptions AddJsonSerializerOptionsFactory(Func<IServiceProvider, JsonSerializerOptions> jsonSerializerOptionsFactory)
-    //{
-    //    JsonSerializerOptionsFactory = jsonSerializerOptionsFactory;
-    //    return this;
-    //}
-
-    //public ErrangeOptions AddWithBaseExceptions<TException>(Action<HttpContext, IServiceProvider, ErrorPolicy> errorFactory) where TException : Exception
-    //{
-    //    AddPolicy<TException>((_, httpContext, serviceProvider, error) => errorFactory(httpContext, serviceProvider, error)); // Will throw if TException is Exception, cause it's registered at constructor.
-
-    //    var baseExceptionErrorPolicy = new ErrorPolicy
-    //    {
-    //        ExceptionType = typeof(TException).BaseType!,
-    //        ErrorFactory = (_, httpContext, serviceProvider, error) => errorFactory(httpContext, serviceProvider, error)
-    //    };
-    //    while (_exceptionTypeToErrorFactories.TryAdd(baseExceptionErrorPolicy.ExceptionType, baseExceptionErrorPolicy)) // Last will be registered via config or Exception.
-    //        baseExceptionErrorPolicy = new ErrorPolicy
-    //        {
-    //            ExceptionType = baseExceptionErrorPolicy.ExceptionType.BaseType!,
-    //            ErrorFactory = baseExceptionErrorPolicy.ErrorFactory
-    //        };
-
-    //    return this;
-    //}
-
-    //public ErrangeOptions AddWithBaseExceptions<TException>(Action<HttpContext, ErrorPolicy> errorFactory) where TException : Exception => AddWithBaseExceptions<TException>((httpContext, _, error) => errorFactory(httpContext, error));
-
-    //public ErrangeOptions AddWithBaseExceptions<TException>(Action<IServiceProvider, ErrorPolicy> errorFactory) where TException : Exception => AddWithBaseExceptions<TException>((_, serviceProvider, error) => errorFactory(serviceProvider, error));
-
-    //public ErrangeOptions AddWithBaseExceptions<TException>(Action<ErrorPolicy> errorFactory) where TException : Exception => AddWithBaseExceptions<TException>((_, _, error) => errorFactory(error));
-
-    public ErrorPolicy GetPolicyForNearestExceptionType(Type exceptionType)
+    internal ProblemPolicy GetPolicyForNearestExceptionType(Type exceptionType)
     {
         while (true) // Latest exception type will be Exception.
         {
-            if (_exceptionTypeToErrorFactories.TryGetValue(exceptionType, out ErrorPolicy? errorPolicy)) return errorPolicy;
+            if (_exceptionTypeToErrorFactories.TryGetValue(exceptionType, out ProblemPolicy? errorPolicy)) return errorPolicy;
             exceptionType = exceptionType.BaseType!;
         }
     }
 
-    public ErrangeOptions AddExceptionDetails(Func<IHostEnvironment, bool> predicate)
+    public ErrangeOptions AddExceptionDetailsWhen(Func<IHostEnvironment, bool> predicate)
     {
-        ExceptionDetailsAdditionPredicate = predicate;
+        ExceptionInfoInclusionPredicate = predicate;
         return this;
     }
 }
