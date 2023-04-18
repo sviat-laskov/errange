@@ -12,7 +12,7 @@ on:
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_NOLOGO: true
-  PackagesDirectory: ${{ github.workspace }}packages
+  PackagesDirectory: ${{ github.workspace }}/packages
 
 jobs:
   create_package:
@@ -50,6 +50,6 @@ jobs:
         uses: actions/setup-dotnet@v3
       - name: Publish NuGet package
         run: |
-          foreach($nugetPackageFile in (Get-ChildItem ${{ env.PackagesDirectory }} -Recurse -Include *.nupkg)) { 
-            dotnet nuget push $nugetPackageFile --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          foreach($nugetPackageFile in (Get-ChildItem "${{ env.PackagesDirectory }}" -Recurse -Include *.nupkg)) { 
+            dotnet nuget push "$nugetPackageFile" --api-key "${{ secrets.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
           }
