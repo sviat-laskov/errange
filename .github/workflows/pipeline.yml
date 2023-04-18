@@ -18,22 +18,22 @@ jobs:
   create_package:
     runs-on: ubuntu-latest
     steps:
-      - uses: actionscheckout@v3
+      - uses: actions/checkout@v3
       - name: Setup .NET
-        uses: actionssetup-dotnet@v3
-      - run: dotnet pack --configuration Release --output ${{ env.PackagesDirectory }}
-      - uses: actionsupload-artifact@v3
+        uses: actions/setup-dotnet@v3
+      - run: dotnet pack --configuration Release --output ${{ env.PackagesDirectory }} ./src/Errange/Errange.csproj
+      - uses: actions/upload-artifact@v3
         with: 
           name: nuget
           if-no-files-found: error
-          path: ${{ env.PackagesDirectory }}.nupkg
+          path: ${{ env.PackagesDirectory }}/*.nupkg
 
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actionscheckout@v3
+      - uses: actions/checkout@v3
       - name: Setup .NET
-        uses: actionssetup-dotnet@v3
+        uses: actions/setup-dotnet@v3
       - name: Run tests
         run: dotnet test --configuration Release
 
@@ -42,11 +42,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actionsdownload-artifact@v3
+      - uses: actions/download-artifact@v3
         with: 
           name: nuget
           path: ${{ env.PackagesDirectory }}
       - name: Setup .NET
-        uses: actionssetup-dotnet@v3
+        uses: actions/setup-dotnet@v3
       - name: Publish NuGet package
-        run: foreach($nugetPackageFile in (Get-ChildItem ${{ env.PackagesDirectory }} -Recurse -Include .nupkg)) { dotnet nuget push $nugetPackageFile --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate }
+        run: foreach($nugetPackageFile in (Get-ChildItem ${{ env.PackagesDirectory }} -Recurse -Include *.nupkg)) { dotnet nuget push $nugetPackageFile --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate }
