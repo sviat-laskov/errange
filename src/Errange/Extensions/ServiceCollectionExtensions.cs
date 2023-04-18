@@ -12,13 +12,12 @@ public static class ServiceCollectionExtensions
     ///     <see cref="ModelStateDictionary" /> are included.
     /// </summary>
     /// <exception cref="ArgumentNullException"></exception>
-    public static IServiceCollection AddErrange(this IServiceCollection services, Action<ErrangeOptions> optionsConfigure)
+    public static IServiceCollection AddErrange(this IServiceCollection services, Action<ErrangeOptions>? optionsConfigure = null)
     {
         if (services == null) throw new ArgumentNullException(nameof(services));
-        if (optionsConfigure == null) throw new ArgumentNullException(nameof(optionsConfigure));
 
         var errangeOptions = new ErrangeOptions();
-        optionsConfigure(errangeOptions);
+        optionsConfigure?.Invoke(errangeOptions);
 
         services.ConfigureInvalidModelStateResponseFactory();
 
