@@ -9,18 +9,20 @@ namespace ExampleApi.Controllers;
 public class ErrorController : ControllerBase
 {
     [HttpGet("custom")]
-    public void ThrowCustomException(string parameter = "defaultParameterValue") => throw new CustomException();
+    public void ThrowCustomException(string parameter = "defaultParameterValue")
+    {
+        var customException = new CustomException();
+        customException.Data.Add(nameof(parameter), parameter);
 
-    [HttpGet("validation")]
-    public void ThrowValidationException([Required] [Range(minimum: 1, maximum: 2)] int? requiredParameter = null) { }
+        throw customException;
+    }
+
+    [HttpGet("validation/range")]
+    public void ThrowValidationExceptionForNullableParameter([Range(minimum: 1, maximum: 2)] int requiredParameter) { }
+
+    [HttpGet("validation/not-nullable")]
+    public void ThrowValidationExceptionForNotNullableParameter(string requiredParameter) { }
 
     [HttpGet("base")]
     public void ThrowException() => throw new Exception();
-
-    //[HttpGet("base")]
-    //public IActionResult ThrowException1()
-    //{
-    //    if (!ModelState.IsValid) return BadRequest(ModelState);
-    //    return Ok();
-    //}
 }

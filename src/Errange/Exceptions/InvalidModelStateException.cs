@@ -2,7 +2,7 @@
 
 namespace Errange.Exceptions;
 
-public class InvalidModelStateException : Exception
+internal class InvalidModelStateException : Exception
 {
     public ModelStateDictionary ModelState { get; init; }
 

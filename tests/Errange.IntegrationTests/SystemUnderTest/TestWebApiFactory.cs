@@ -15,22 +15,26 @@ public class TestWebApiFactory : WebApplicationFactory<TestWebApiFactory>
     public const string DefaultEndpoint = "/endpoint";
     private readonly Action<IServiceCollection>? _additionalServicesConfigure;
     private readonly Action<IEndpointRouteBuilder>? _endpointRouteBuilderConfigure;
+    private readonly string _environmentName;
     private readonly Action<ErrangeOptions>? _errangeOptionsConfigure;
 
     public TestWebApiFactory(
         Action<IEndpointRouteBuilder>? endpointRouteBuilderConfigure = null,
         Action<ErrangeOptions>? errangeOptionsConfigure = null,
-        Action<IServiceCollection>? additionalServicesConfigure = null)
+        Action<IServiceCollection>? additionalServicesConfigure = null,
+        string environmentName = nameof(Environments.Production))
     {
         _endpointRouteBuilderConfigure = endpointRouteBuilderConfigure;
         _errangeOptionsConfigure = errangeOptionsConfigure;
         _additionalServicesConfigure = additionalServicesConfigure;
+        _environmentName = environmentName;
     }
 
     protected override IHost CreateHost(IHostBuilder builder) => base.CreateHost(builder.UseContentRoot(Directory.GetCurrentDirectory()));
 
     protected override IHostBuilder CreateHostBuilder() => Host
         .CreateDefaultBuilder()
+        .UseEnvironment(_environmentName)
         .ConfigureServices(services =>
         {
             services

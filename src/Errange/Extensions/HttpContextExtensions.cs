@@ -10,7 +10,7 @@ using Microsoft.Net.Http.Headers;
 
 namespace Errange.Extensions;
 
-public static class HttpContextExtensions
+internal static class HttpContextExtensions
 {
     private static readonly ActionDescriptor EmptyActionDescriptor = new();
     private static readonly RouteData EmptyRouteData = new();
