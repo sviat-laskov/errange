@@ -9,16 +9,20 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_NOLOGO: true
   PackagesDirectory: ${{ github.workspace }}/packages
+  ErrangeProject: ./src/Errange/Errange.csproj
 
 jobs:
   pack:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
-      - run: dotnet pack --configuration Release --output ${{ env.PackagesDirectory }} ./src/Errange/Errange.csproj
-      - uses: actions/upload-artifact@v3
+      - name: Pack
+        run: dotnet pack --configuration Release --output ${{ env.PackagesDirectory }} ${{ env.ErrangeProject }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
         with: 
           name: nuget
           path: ${{ env.PackagesDirectory }}/*.nupkg
@@ -26,7 +30,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: pack
     steps:
-      - uses: actions/download-artifact@v3
+      - name: Download artifact
+        uses: actions/download-artifact@v3
         with: 
           name: nuget
           path: ${{ env.PackagesDirectory }}
