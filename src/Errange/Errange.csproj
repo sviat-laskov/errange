@@ -5,6 +5,7 @@
 		<LangVersion>10</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Version>1.0.2-alpha</Version>
 		<Authors>sviat-laskov</Authors>
