@@ -154,6 +154,16 @@ public sealed class ProblemPolicy<TException> : ProblemPolicy where TException :
     ///     Sets <see cref="ErrangeProblemDetails.Detail" />. A human-readable explanation specific to this occurrence of
     ///     the problem (example - 'Nickname 'superuser123' is already used.').
     /// </summary>
+    public ProblemPolicy<TException> WithDetail(Func<TException, string?> detailFactory)
+    {
+        DetailFactory = (exception, _, _) => detailFactory(exception);
+        return this;
+    }
+
+    /// <summary>
+    ///     Sets <see cref="ErrangeProblemDetails.Detail" />. A human-readable explanation specific to this occurrence of
+    ///     the problem (example - 'Nickname 'superuser123' is already used.').
+    /// </summary>
     public ProblemPolicy<TException> WithDetail(Func<TException, HttpContext, IServiceProvider, string?> detailFactory)
     {
         DetailFactory = detailFactory;
