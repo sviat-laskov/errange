@@ -24,12 +24,14 @@ public class IntegrationTests
         HttpStatusCode.BadRequest,
         "CUS001",
         "Happens when you want this.",
+        "Happened when you wanted this.",
         "Custom error happened.",
         "defaultParameterValue",
         "Constant", "This message happened, cause you configured it.")]
     public async Task ErrorShouldMatchConfiguration(
         HttpStatusCode httpStatusCode,
         string errorCode,
+        string errorTitle,
         string errorDescription,
         string exceptionMessage,
         string requestParameterValue,
@@ -48,6 +50,7 @@ public class IntegrationTests
                     .WithPolicy<CustomException>(policy => policy
                         .WithHttpStatusCode(httpStatusCode)
                         .WithCustomProblemCode(errorCode)
+                        .WithTitle(errorTitle)
                         .WithDetail(errorDescription)
                         .WithDataItem(dataItemFromExceptionKey).WithValue(exception => exception.Message)
                         .ProblemPolicy.WithDataItem(dataItemFromRequestKey).WithValue(httpContext => httpContext.Request.Query[requestParameterKey].SingleOrDefault()).When(value => value == requestParameterValue)
@@ -62,6 +65,7 @@ public class IntegrationTests
 
         errangeProblemDetails.Status.Should().Be(StatusCodes.Status400BadRequest);
         errangeProblemDetails.ProblemCode.Should().Be(errorCode);
+        errangeProblemDetails.Title.Should().Be(errorTitle);
         errangeProblemDetails.Detail.Should().Be(errorDescription);
 
         ProblemDataItem problemDataItemFromExceptionKey = errangeProblemDetails.GetDataItemVm<string>(dataItemFromExceptionKey);

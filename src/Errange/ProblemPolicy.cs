@@ -126,7 +126,7 @@ public sealed class ProblemPolicy<TException> : ProblemPolicy where TException :
     /// </summary>
     public ProblemPolicy<TException> WithTitle(string title)
     {
-        ProblemCodeFactory = _ => title;
+        TitleFactory = _ => title;
         return this;
     }
 
@@ -136,7 +136,7 @@ public sealed class ProblemPolicy<TException> : ProblemPolicy where TException :
     /// </summary>
     public ProblemPolicy<TException> WithTitle(Func<TException, string> problemCodeFactory)
     {
-        ProblemCodeFactory = problemCodeFactory;
+        TitleFactory = problemCodeFactory;
         return this;
     }
 
