@@ -1,5 +1,5 @@
 ﻿using System.Net;
-using System.Text.Json;
+using System.Net.Http.Json;
 using Errange.ViewModels;
 using FluentAssertions;
 
@@ -10,8 +10,8 @@ public static class HttpResponseMessageExtensions
     public static async Task<ErrangeProblemDetails> MapToErrangeProblemDetailsIfStatusCodeMatches(this HttpResponseMessage httpResponseMessage, HttpStatusCode httpStatusCode = HttpStatusCode.BadRequest)
     {
         httpResponseMessage.StatusCode.Should().Be(httpStatusCode);
-        string errangeProblemDetailsJson = await httpResponseMessage.Content.ReadAsStringAsync();
-        var errangeProblemDetails = JsonSerializer.Deserialize<ErrangeProblemDetails>(errangeProblemDetailsJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
-        return errangeProblemDetails;
+        var errangeProblemDetails = await httpResponseMessage.Content.ReadFromJsonAsync<ErrangeProblemDetails>();
+
+        return errangeProblemDetails!;
     }
 }
